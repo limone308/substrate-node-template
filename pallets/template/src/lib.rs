@@ -8,9 +8,6 @@ pub use pallet::*;
 #[cfg(test)]
 mod mock;
 
-#[cfg(test)]
-mod tests;
-
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
@@ -36,7 +33,7 @@ pub mod pallet {
 	#[pallet::getter(fn passcode)]
 	// Learn more about declaring storage items:
 	// https://docs.substrate.io/v3/runtime/storage#declaring-storage-items
-	pub type Passcode<T> = StorageValue<_, u32>;
+	pub type Counting<T> = StorageValue<_, u32>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
@@ -45,7 +42,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
-		PasscodeStored(u32, T::AccountId),
+		CountingStored(u32, T::AccountId),
 	}
 
 	// Errors inform users that something went wrong.
@@ -65,17 +62,16 @@ pub mod pallet {
 		/// An example dispatchable that takes a singles value as a parameter, writes the value to
 		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn check_passcode(origin: OriginFor<T>, passcode: u32) -> DispatchResult {
+		pub fn rand_count(origin: OriginFor<T>, count: u32) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
 			// https://docs.substrate.io/v3/runtime/origins
 			let who = ensure_signed(origin)?;
-
 			// Update storage.
-			<Passcode<T>>::put(passcode);
+			<Counting<T>>::put(count);
 
 			// Emit an event.
-			Self::deposit_event(Event::PasscodeStored(passcode, who));
+			Self::deposit_event(Event::CountingStored(count, who));
 			// Return a successful DispatchResultWithPostInfo
 			Ok(())
 		}
@@ -86,14 +82,14 @@ pub mod pallet {
 			let _who = ensure_signed(origin)?;
 
 			// Read a value from storage.
-			match <Passcode<T>>::get() {
+			match <Counting<T>>::get() {
 				// Return an error if the value has not been set.
 				None => Err(Error::<T>::NoneValue)?,
 				Some(old) => {
 					// Increment the value read from storage; will error in the event of overflow.
 					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
 					// Update the value in storage with the incremented result.
-					<Passcode<T>>::put(new);
+					<Counting<T>>::put(new);
 					Ok(())
 				},
 			}
